@@ -1,0 +1,18 @@
+appId: com.infinitecanvas.app
+productName: Infinite Canvas
+directories:
+  output: dist
+files:
+  - dist-electron/**/*
+  - dist/**/*
+  - electron/**/*
+  - node_modules/**/*
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+
