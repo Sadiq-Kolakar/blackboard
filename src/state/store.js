@@ -170,7 +170,21 @@ const useStore = create((set, get) => ({
       selectedObjectId: null,
     });
   },
+
+  resetCanvas: () => {
+    set({
+      objects: [],
+      scale: 1,
+      position: { x: 0, y: 0 },
+      history: [[]],
+      historyIndex: 0,
+      selectedObjectId: null,
+      isDrawing: false,
+      currentPath: null,
+      editingTextId: null,
+      pendingImage: null,
+    });
+  },
 }));
 
 export default useStore;
-

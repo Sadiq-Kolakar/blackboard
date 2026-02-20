@@ -149,3 +149,11 @@
   min-width: 30px;
   color: #fff;
 }
+
+.wide-btn {
+  width: auto;
+  min-width: 84px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+}

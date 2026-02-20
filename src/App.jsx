@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import Canvas from './canvas/Canvas';
 import Toolbar from './components/Toolbar';
 import ZoomControls from './components/ZoomControls';
+import StarterPanel from './components/StarterPanel';
 import './App.css';
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
     <div className="app">
       <Toolbar canvasRef={canvasRef} />
       <Canvas ref={canvasRef} />
+      <StarterPanel />
       <ZoomControls />
     </div>
   );
