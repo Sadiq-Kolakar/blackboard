@@ -85,6 +85,9 @@ const Canvas = forwardRef((props, ref) => {
         } else if (e.key === 'e') {
           e.preventDefault();
           document.querySelector('.toolbar button[title*="Export"]')?.click();
+        } else if (e.key === 'n') {
+          e.preventDefault();
+          document.querySelector('.toolbar button[title*="New Canvas"]')?.click();
         }
       } else {
         if (e.key === 'Delete' || e.key === 'Backspace') {

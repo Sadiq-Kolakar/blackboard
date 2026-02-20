@@ -15,7 +15,16 @@ const Toolbar = ({ canvasRef }) => {
     canUndo,
     canRedo,
     deleteSelected,
+    resetCanvas,
+    setPendingImage,
   } = useStore();
+
+  const handleNewCanvas = () => {
+    const hasObjects = useStore.getState().objects.length > 0;
+    if (!hasObjects || window.confirm('Start a new canvas? Unsaved work will be cleared.')) {
+      resetCanvas();
+    }
+  };
 
   const handleSave = async () => {
     if (window.electronAPI) {
@@ -61,7 +70,6 @@ const Toolbar = ({ canvasRef }) => {
   };
 
   const handleExport = async () => {
-    // Get the Konva stage from the canvas ref
     if (canvasRef?.current?.getStage) {
       const stage = canvasRef.current.getStage();
       if (stage) {
@@ -85,7 +93,7 @@ const Toolbar = ({ canvasRef }) => {
         const imageResult = await window.electronAPI.readImageFile(result.path);
         if (imageResult.success) {
           useStore.getState().setTool('image');
-          useStore.getState().pendingImage = imageResult.data;
+          setPendingImage(imageResult.data);
         }
       }
     } else {
@@ -98,7 +106,7 @@ const Toolbar = ({ canvasRef }) => {
           const reader = new FileReader();
           reader.onload = (event) => {
             useStore.getState().setTool('image');
-            useStore.getState().pendingImage = event.target.result;
+            setPendingImage(event.target.result);
           };
           reader.readAsDataURL(file);
         }
@@ -109,6 +117,12 @@ const Toolbar = ({ canvasRef }) => {
 
   return (
     <div className="toolbar">
+      <div className="toolbar-section">
+        <button className="tool-btn wide-btn" onClick={handleNewCanvas} title="New Canvas (Ctrl+N)">
+          ✨ New
+        </button>
+      </div>
+
       <div className="toolbar-section">
         <button
           className={`tool-btn ${tool === 'draw' ? 'active' : ''}`}
@@ -214,4 +228,3 @@ const Toolbar = ({ canvasRef }) => {
 };
 
 export default Toolbar;
-
