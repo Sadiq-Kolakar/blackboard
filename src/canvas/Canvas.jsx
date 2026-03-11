@@ -4,6 +4,46 @@ import useImage from 'use-image';
 import useStore from '../state/store';
 import './Canvas.css';
 
+// Defined outside Canvas so it is not recreated on every render.
+const ImageObject = ({ obj, tool, onMouseEnter, onMouseLeave }) => {
+  const [image] = useImage(obj.image);
+  const updateObject = useStore((s) => s.updateObject);
+  const setSelectedObject = useStore((s) => s.setSelectedObject);
+  return (
+    <Image
+      id={obj.id}
+      image={image}
+      x={obj.x}
+      y={obj.y}
+      width={obj.width}
+      height={obj.height}
+      draggable={tool === 'select'}
+      onClick={() => tool === 'select' && setSelectedObject(obj.id)}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onDragEnd={(e) => {
+        updateObject(obj.id, {
+          x: e.target.x(),
+          y: e.target.y(),
+        });
+      }}
+      onTransformEnd={(e) => {
+        const node = e.target;
+        const scaleX = node.scaleX();
+        const scaleY = node.scaleY();
+        node.scaleX(1);
+        node.scaleY(1);
+        updateObject(obj.id, {
+          x: node.x(),
+          y: node.y(),
+          width: Math.max(5, node.width() * scaleX),
+          height: Math.max(5, node.height() * scaleY),
+        });
+      }}
+    />
+  );
+};
+
 const Canvas = forwardRef((props, ref) => {
   const stageRef = useRef(null);
   const layerRef = useRef(null);
@@ -11,10 +51,26 @@ const Canvas = forwardRef((props, ref) => {
   const isPanning = useRef(false);
   const lastPointerPosition = useRef({ x: 0, y: 0 });
   const [pendingImage, setPendingImage] = useState(null);
+  const [stageSize, setStageSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight - 60,
+  });
 
   useImperativeHandle(ref, () => ({
     getStage: () => stageRef.current,
   }));
+
+  // Update stage dimensions when the browser window is resized.
+  useEffect(() => {
+    const handleResize = () => {
+      setStageSize({
+        width: window.innerWidth,
+        height: window.innerHeight - 60,
+      });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const {
     tool,
@@ -277,6 +333,7 @@ const Canvas = forwardRef((props, ref) => {
     textarea.focus();
 
     const removeTextarea = () => {
+      textarea.removeEventListener('blur', commitText);
       textarea.parentNode?.removeChild(textarea);
     };
 
@@ -285,64 +342,32 @@ const Canvas = forwardRef((props, ref) => {
       textarea.style.width = `${newWidth}px`;
     };
 
+    const commitText = () => {
+      updateObject(textNode.id(), { text: textarea.value });
+      removeTextarea();
+    };
+
     textarea.addEventListener('keydown', (e) => {
       if (e.keyCode === 13 && !e.shiftKey) {
         e.preventDefault();
-        updateObject(textNode.id(), { text: textarea.value });
-        removeTextarea();
+        commitText();
       }
       if (e.keyCode === 27) {
         removeTextarea();
       }
     });
 
+    textarea.addEventListener('blur', commitText);
     textarea.addEventListener('keydown', setTextareaWidth);
     textarea.addEventListener('input', setTextareaWidth);
-  };
-
-  const ImageObject = ({ obj, onMouseEnter, onMouseLeave }) => {
-    const [image] = useImage(obj.image);
-    return (
-      <Image
-        id={obj.id}
-        image={image}
-        x={obj.x}
-        y={obj.y}
-        width={obj.width}
-        height={obj.height}
-        draggable={tool === 'select'}
-        onClick={() => tool === 'select' && setSelectedObject(obj.id)}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        onDragEnd={(e) => {
-          updateObject(obj.id, {
-            x: e.target.x(),
-            y: e.target.y(),
-          });
-        }}
-        onTransformEnd={(e) => {
-          const node = e.target;
-          const scaleX = node.scaleX();
-          const scaleY = node.scaleY();
-          node.scaleX(1);
-          node.scaleY(1);
-          updateObject(obj.id, {
-            x: node.x(),
-            y: node.y(),
-            width: Math.max(5, node.width() * scaleX),
-            height: Math.max(5, node.height() * scaleY),
-          });
-        }}
-      />
-    );
   };
 
   return (
     <div className="canvas-container">
       <Stage
         ref={stageRef}
-        width={window.innerWidth}
-        height={window.innerHeight - 60}
+        width={stageSize.width}
+        height={stageSize.height}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -417,6 +442,7 @@ const Canvas = forwardRef((props, ref) => {
                 <ImageObject
                   key={obj.id}
                   obj={obj}
+                  tool={tool}
                   onMouseEnter={(e) => {
                     const node = e.target;
                     node.shadowColor('white');
