@@ -59,8 +59,16 @@ const Toolbar = ({ canvasRef }) => {
         if (file) {
           const reader = new FileReader();
           reader.onload = (event) => {
-            const data = JSON.parse(event.target.result);
-            useStore.getState().loadCanvasData(data);
+            try {
+              const data = JSON.parse(event.target.result);
+              useStore.getState().loadCanvasData(data);
+            } catch (err) {
+              alert('Error loading file: The file is not valid canvas data.');
+              console.error('Failed to parse canvas file:', err);
+            }
+          };
+          reader.onerror = () => {
+            alert('Error reading file.');
           };
           reader.readAsText(file);
         }
@@ -107,6 +115,9 @@ const Toolbar = ({ canvasRef }) => {
           reader.onload = (event) => {
             useStore.getState().setTool('image');
             setPendingImage(event.target.result);
+          };
+          reader.onerror = () => {
+            alert('Error reading image file.');
           };
           reader.readAsDataURL(file);
         }
