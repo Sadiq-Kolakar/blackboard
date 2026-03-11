@@ -154,10 +154,21 @@ ipcMain.handle('export-image-dialog', async (event, imageData) => {
 
 ipcMain.handle('read-image-file', async (event, filePath) => {
   try {
-    const { readFile } = await import('fs/promises');
+    const mimeTypes = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif',
+      '.bmp': 'image/bmp',
+    };
+    const ext = path.extname(filePath).toLowerCase();
+    const mimeType = mimeTypes[ext];
+    if (!mimeType) {
+      return { success: false, error: `Unsupported image format: ${ext || '(none)'}` };
+    }
     const buffer = await readFile(filePath);
     const base64 = buffer.toString('base64');
-    return { success: true, data: `data:image/png;base64,${base64}` };
+    return { success: true, data: `data:${mimeType};base64,${base64}` };
   } catch (error) {
     return { success: false, error: error.message };
   }

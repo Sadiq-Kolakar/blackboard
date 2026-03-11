@@ -11,6 +11,7 @@ const Canvas = forwardRef((props, ref) => {
   const isPanning = useRef(false);
   const lastPointerPosition = useRef({ x: 0, y: 0 });
   const [pendingImage, setPendingImage] = useState(null);
+  const activeTextareaRef = useRef(null);
 
   useImperativeHandle(ref, () => ({
     getStage: () => stageRef.current,
@@ -47,6 +48,16 @@ const Canvas = forwardRef((props, ref) => {
       useStore.setState({ pendingImage: null });
     }
   }, [storePendingImage]);
+
+  // Cleanup any active textarea on unmount
+  useEffect(() => {
+    return () => {
+      if (activeTextareaRef.current && activeTextareaRef.current.parentNode) {
+        activeTextareaRef.current.parentNode.removeChild(activeTextareaRef.current);
+        activeTextareaRef.current = null;
+      }
+    };
+  }, []);
 
   // Update transformer when selection changes
   useEffect(() => {
@@ -139,6 +150,7 @@ const Canvas = forwardRef((props, ref) => {
     const stage = e.target.getStage();
     const oldScale = scale;
     const pointer = stage.getPointerPosition();
+    if (!pointer) return;
     const mousePointTo = {
       x: (pointer.x - position.x) / oldScale,
       y: (pointer.y - position.y) / oldScale,
@@ -159,6 +171,7 @@ const Canvas = forwardRef((props, ref) => {
   const handleMouseDown = (e) => {
     const stage = e.target.getStage();
     const pointer = stage.getPointerPosition();
+    if (!pointer) return;
     const pointerPos = {
       x: (pointer.x - position.x) / scale,
       y: (pointer.y - position.y) / scale,
@@ -221,6 +234,7 @@ const Canvas = forwardRef((props, ref) => {
   const handleMouseMove = (e) => {
     const stage = e.target.getStage();
     const pointer = stage.getPointerPosition();
+    if (!pointer) return;
     const pointerPos = {
       x: (pointer.x - position.x) / scale,
       y: (pointer.y - position.y) / scale,
@@ -259,6 +273,7 @@ const Canvas = forwardRef((props, ref) => {
 
     const textarea = document.createElement('textarea');
     document.body.appendChild(textarea);
+    activeTextareaRef.current = textarea;
     textarea.value = textNode.text();
     textarea.style.position = 'absolute';
     textarea.style.top = `${areaPosition.y}px`;
@@ -278,6 +293,7 @@ const Canvas = forwardRef((props, ref) => {
 
     const removeTextarea = () => {
       textarea.parentNode?.removeChild(textarea);
+      activeTextareaRef.current = null;
     };
 
     const setTextareaWidth = () => {
