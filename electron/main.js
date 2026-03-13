@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import { readFile, writeFile } from 'fs/promises';
 import { existsSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, basename, extname } from 'path';
 import { fileURLToPath } from 'url';
 import isDev from 'electron-is-dev';
 
@@ -70,7 +70,9 @@ const getAppDataPath = () => {
 ipcMain.handle('save-file', async (event, data, filename) => {
   try {
     const appDataPath = getAppDataPath();
-    const filePath = join(appDataPath, filename || 'canvas.json');
+    // Sanitise: strip any directory components to prevent path traversal.
+    const safeFilename = basename(filename || 'canvas.json');
+    const filePath = join(appDataPath, safeFilename);
     await writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
     return { success: true, path: filePath };
   } catch (error) {
@@ -81,7 +83,9 @@ ipcMain.handle('save-file', async (event, data, filename) => {
 ipcMain.handle('load-file', async (event, filename) => {
   try {
     const appDataPath = getAppDataPath();
-    const filePath = join(appDataPath, filename || 'canvas.json');
+    // Sanitise: strip any directory components to prevent path traversal.
+    const safeFilename = basename(filename || 'canvas.json');
+    const filePath = join(appDataPath, safeFilename);
     if (!existsSync(filePath)) {
       return { success: false, error: 'File not found' };
     }
@@ -154,10 +158,23 @@ ipcMain.handle('export-image-dialog', async (event, imageData) => {
 
 ipcMain.handle('read-image-file', async (event, filePath) => {
   try {
-    const { readFile } = await import('fs/promises');
-    const buffer = await readFile(filePath);
+    const { readFile: readFileFn } = await import('fs/promises');
+    const buffer = await readFileFn(filePath);
     const base64 = buffer.toString('base64');
-    return { success: true, data: `data:image/png;base64,${base64}` };
+
+    // Detect MIME type from file extension.
+    const ext = extname(filePath).slice(1).toLowerCase();
+    const mimeMap = {
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      gif: 'image/gif',
+      bmp: 'image/bmp',
+      webp: 'image/webp',
+    };
+    const mime = mimeMap[ext] || 'image/png';
+
+    return { success: true, data: `data:${mime};base64,${base64}` };
   } catch (error) {
     return { success: false, error: error.message };
   }

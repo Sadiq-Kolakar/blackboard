@@ -59,8 +59,12 @@ const Toolbar = ({ canvasRef }) => {
         if (file) {
           const reader = new FileReader();
           reader.onload = (event) => {
-            const data = JSON.parse(event.target.result);
-            useStore.getState().loadCanvasData(data);
+            try {
+              const data = JSON.parse(event.target.result);
+              useStore.getState().loadCanvasData(data);
+            } catch {
+              alert('Failed to load canvas: the selected file is not valid JSON.');
+            }
           };
           reader.readAsText(file);
         }

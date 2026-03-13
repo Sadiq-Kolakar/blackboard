@@ -5,6 +5,12 @@ import './StarterPanel.css';
 const StarterPanel = () => {
   const { objects, scale, position, addObject, setTool, resetCanvas } = useStore();
 
+  const handleClearCanvas = () => {
+    if (objects.length === 0 || window.confirm('Clear the entire canvas? This cannot be undone.')) {
+      resetCanvas();
+    }
+  };
+
   const addQuickNote = () => {
     const viewportCenterX = (window.innerWidth / 2 - position.x) / scale;
     const viewportCenterY = ((window.innerHeight - 60) / 2 - position.y) / scale;
@@ -26,7 +32,7 @@ const StarterPanel = () => {
       <p>Quick actions to kickstart your board.</p>
       <div className="starter-actions">
         <button onClick={addQuickNote}>Add note</button>
-        <button onClick={resetCanvas}>Clear canvas</button>
+        <button onClick={handleClearCanvas}>Clear canvas</button>
       </div>
       <div className="starter-meta">
         <span>Objects: {objects.length}</span>
